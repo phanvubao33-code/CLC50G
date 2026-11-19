@@ -53,7 +53,7 @@ Trang kỷ yếu một trang, giao diện tiếng Việt, cùng CMS riêng tại
 
 ## CMS
 
-- Thành viên đăng ký và đăng nhập tại `/account/`. Mọi tài khoản tạo từ trang này đều bắt đầu với quyền `member`; không có username đặc biệt tự nhận quyền admin. Tài khoản thành viên không thể gọi API CMS. Việc cấp quyền admin sẽ được thực hiện riêng sau khi xác định tài khoản cần cấp.
+- Thành viên đăng nhập riêng tại `/login/` và đăng ký tại `/account/`. Mọi tài khoản tạo từ trang này đều bắt đầu với quyền `member`; không có username đặc biệt tự nhận quyền admin. Tài khoản thành viên không thể gọi API CMS. Việc cấp quyền admin sẽ được thực hiện riêng sau khi xác định tài khoản cần cấp.
 - Trang `/admin/` giữ thông tin đăng nhập quản trị riêng qua `CMS_ADMIN_USERNAME` và `CMS_ADMIN_PASSWORD` trong Cloudflare Secrets. Các thông tin này không ảnh hưởng đến quyền của tài khoản đăng ký ở `/account/`.
 - Thành viên có thể tự đăng ký bằng username từ 3–32 ký tự và mật khẩu từ 12 ký tự.
 - Mật khẩu thành viên được băm bằng PBKDF2 và salt ngẫu nhiên trước khi lưu vào D1. Cookie phiên là `HttpOnly`, `Secure`, `SameSite=Strict`; đăng ký/đăng nhập có giới hạn số lần thử.

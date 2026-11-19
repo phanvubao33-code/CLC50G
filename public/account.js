@@ -63,4 +63,5 @@ $("#logout").addEventListener("click", async () => {
   catch (error) { status.textContent = error.message; }
 });
 
+if (new URLSearchParams(location.search).get("tab") === "register") setTab("register");
 boot();
