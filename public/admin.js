@@ -1,6 +1,6 @@
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-const state = { slots: [], items: [], settings: {}, email: "" };
+const state = { slots: [], items: [], settings: {}, username: "" };
 const groupNames = { opening: "Mở đầu", beginning: "Những ngày đầu", moments: "Khoảnh khắc", journey: "Hành trình", people: "Mọi người", closing: "Khép lại" };
 
 function node(tag, className = "", text = "") {
@@ -199,17 +199,20 @@ async function loadCms() {
   renderSlots(); renderItems(); renderSettings();
 }
 
-function showAdmin(email) {
+function showAdmin(username) {
   $("#login-view").classList.add("hidden"); $("#admin-view").classList.remove("hidden"); $("#logout").classList.remove("hidden");
-  $("#admin-identity").textContent = `ĐANG ĐĂNG NHẬP · ${email}`; state.email = email;
+  $("#admin-identity").textContent = `ĐANG ĐĂNG NHẬP · ${username}`; state.username = username;
   loadCms().catch((error) => notice(error.message, true));
 }
 
 async function boot() {
   try {
     const session = await api("/api/admin/session");
-    if (session.authenticated) showAdmin(session.email);
-    else $("#login-view").classList.remove("hidden");
+    if (session.authenticated) showAdmin(session.username || session.email);
+    else {
+      $("#login-view").classList.remove("hidden");
+      $("#show-register").classList.toggle("hidden", !session.registration_available);
+    }
   } catch (error) {
     $("#login-view").classList.remove("hidden"); $("#login-status").textContent = error.message;
   }
@@ -219,10 +222,29 @@ $("#login-form").addEventListener("submit", async (event) => {
   event.preventDefault(); const status = $("#login-status"); status.textContent = "Đang xác thực…";
   const buttonEl = event.currentTarget.querySelector("button[type=submit]"); buttonEl.disabled = true;
   try {
-    const result = await api("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: $("#email").value, password: $("#password").value }) });
-    $("#password").value = ""; showAdmin(result.email); status.textContent = "";
+    const result = await api("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: $("#username").value, password: $("#password").value }) });
+    $("#password").value = ""; showAdmin(result.username); status.textContent = "";
   } catch (error) { status.textContent = error.message; }
   finally { buttonEl.disabled = false; }
+});
+
+$("#show-register").addEventListener("click", () => {
+  $("#login-panel").classList.add("hidden"); $("#register-form").classList.remove("hidden"); $("#register-username").focus();
+});
+
+$("#show-login").addEventListener("click", () => {
+  $("#register-form").classList.add("hidden"); $("#login-panel").classList.remove("hidden"); $("#username").focus();
+});
+
+$("#register-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget, submit = form.querySelector("button[type=submit]"), status = $("#register-status");
+  submit.disabled = true; status.textContent = "Đang tạo tài khoản…";
+  try {
+    const result = await api("/api/admin/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: $("#register-username").value, password: $("#register-password").value, setup_token: $("#setup-token").value }) });
+    $("#register-password").value = ""; $("#setup-token").value = ""; showAdmin(result.username); status.textContent = "";
+  } catch (error) { status.textContent = error.message; }
+  finally { submit.disabled = false; }
 });
 
 $("#logout").addEventListener("click", async () => {

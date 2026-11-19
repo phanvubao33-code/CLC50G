@@ -47,6 +47,66 @@ export async function sha256(value) {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+export function constantTimeEqual(left, right) {
+  if (typeof left !== "string" || typeof right !== "string" || left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index++) difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  return difference === 0;
+}
+
+function toHex(bytes) {
+  return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function toBase64(bytes) {
+  return btoa(String.fromCharCode(...new Uint8Array(bytes)));
+}
+
+export async function hashPassword(password, salt = crypto.getRandomValues(new Uint8Array(16))) {
+  const iterations = 210_000;
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, key, 256);
+  return `pbkdf2$${iterations}$${toBase64(salt)}$${toHex(bits)}`;
+}
+
+export async function verifyPassword(password, storedHash) {
+  const [scheme, iterationsText, saltText, expected] = (storedHash || "").split("$");
+  const iterations = Number(iterationsText);
+  if (scheme !== "pbkdf2" || !Number.isInteger(iterations) || iterations < 100_000 || iterations > 1_000_000 || !saltText || !/^[a-f0-9]{64}$/.test(expected || "")) return false;
+  let salt;
+  try { salt = Uint8Array.from(atob(saltText), (character) => character.charCodeAt(0)); } catch { return false; }
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, key, 256);
+  const actual = toHex(bits);
+  if (actual.length !== expected.length) return false;
+  let difference = 0;
+  for (let index = 0; index < actual.length; index++) difference |= actual.charCodeAt(index) ^ expected.charCodeAt(index);
+  return difference === 0;
+}
+
+export async function rateLimited(db, request, maxAttempts = 5) {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const key = await sha256(ip);
+  await db.prepare(`INSERT INTO login_attempts (ip_hash, attempt_count, window_started_at) VALUES (?1, 1, CURRENT_TIMESTAMP)
+    ON CONFLICT(ip_hash) DO UPDATE SET
+      attempt_count = CASE WHEN datetime(login_attempts.window_started_at) <= datetime('now', '-15 minutes') THEN 1 ELSE login_attempts.attempt_count + 1 END,
+      window_started_at = CASE WHEN datetime(login_attempts.window_started_at) <= datetime('now', '-15 minutes') THEN CURRENT_TIMESTAMP ELSE login_attempts.window_started_at END`)
+    .bind(key).run();
+  const row = await db.prepare("SELECT attempt_count FROM login_attempts WHERE ip_hash = ?1").bind(key).first();
+  return row.attempt_count > maxAttempts;
+}
+
+export async function canRegisterAdmin(env) {
+  if (!env.DB || typeof env.CMS_ADMIN_SETUP_TOKEN !== "string" || env.CMS_ADMIN_SETUP_TOKEN.length < 32) return false;
+  try {
+    await env.DB.prepare("SELECT username, password_hash FROM admins LIMIT 0").run();
+    const row = await env.DB.prepare("SELECT COUNT(*) AS count FROM admins").first();
+    return Number(row?.count || 0) === 0;
+  } catch {
+    return false;
+  }
+}
+
 function cookieValue(request, name) {
   const cookie = request.headers.get("Cookie") || "";
   for (const part of cookie.split(";")) {
