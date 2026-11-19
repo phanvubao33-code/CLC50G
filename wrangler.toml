@@ -5,7 +5,7 @@ pages_build_output_dir = "./public"
 [[d1_databases]]
 binding = "DB"
 database_name = "our-memories"
-database_id = "00000000-0000-0000-0000-000000000001" # Replace with the D1 database ID before deploying.
+database_id = "bdd1973e-11eb-4576-93dd-e4aca3574a18" # Replace with the D1 database ID before deploying.
 migrations_dir = "migrations"
 
 [[r2_buckets]]
