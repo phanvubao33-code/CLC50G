@@ -1,0 +1,16 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": [
+          "https://<ten-pages-project>.pages.dev",
+          "https://<ten-mien-rieng-cua-ban>"
+        ],
+        "methods": ["PUT"],
+        "headers": ["Content-Type"]
+      },
+      "exposeHeaders": ["ETag"],
+      "maxAgeSeconds": 3600
+    }
+  ]
+}

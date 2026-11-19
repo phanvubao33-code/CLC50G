@@ -1,0 +1,4 @@
+CMS_ADMIN_EMAIL=admin@example.com
+CMS_ADMIN_PASSWORD=replace-with-a-long-local-only-password
+CMS_R2_PRESIGN_MODE=local
+CMS_LOCAL_UPLOAD_SECRET=replace-with-a-random-local-secret-at-least-32-characters
