@@ -13,24 +13,12 @@
     .brand,.top-right a{white-space:nowrap}
     @media(max-width:620px){.top{gap:10px}.brand{font-size:9px;letter-spacing:.06em}.top-right{gap:8px}.top-right a{font-size:9px}.top-right .btn{padding:6px 8px}}
   @media(max-width:620px){.tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;overflow:visible}.tabs button{min-width:0;white-space:normal;text-align:left}.tabs button:last-child{grid-column:1/-1}}
-    .auth-toggle{margin-top:12px;border:0;background:none;padding:8px 0;color:var(--blue);font-size:12px;text-decoration:underline;cursor:pointer}.auth-note{font-size:11px;color:var(--muted)}
     :focus-visible{outline:2px solid var(--blue);outline-offset:3px}</style>
 </head>
 <body>
   <header class="shell top"><a class="brand" href="/">KÝ ỨC CHÚNG TA / QUẢN TRỊ</a><div class="top-right"><a href="/" target="_blank" rel="noreferrer">Xem trang kỷ yếu ↗</a><button class="btn btn-quiet btn-small hidden" id="logout">Đăng xuất</button></div></header>
   <main class="shell">
-    <section class="login-wrap hidden" id="login-view">
-      <div id="login-panel"><span class="eyebrow">Không gian riêng</span><h1>Đăng nhập<br>quản trị.</h1><p>Đăng nhập để cập nhật ảnh và câu chuyện của lớp.</p>
-        <form id="login-form"><div class="field"><label for="username">Tên đăng nhập</label><input id="username" name="username" type="text" autocomplete="username" required maxlength="32"></div><div class="field"><label for="password">Mật khẩu</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256"></div><button class="btn" type="submit">Vào trang quản trị</button><p class="login-status" id="login-status" aria-live="polite"></p></form>
-        <button class="auth-toggle hidden" id="show-register" type="button">Đăng ký quản trị đầu tiên</button>
-      </div>
-      <form id="register-form" class="hidden"><span class="eyebrow">Thiết lập lần đầu</span><h1>Tạo tài khoản<br>quản trị.</h1><p>Chỉ tài khoản quản trị đầu tiên được tự đăng ký. Sau khi tạo xong, đăng ký sẽ tự khóa.</p>
-        <div class="field"><label for="register-username">Tên đăng nhập</label><input id="register-username" name="username" type="text" autocomplete="username" required maxlength="32" pattern="[a-zA-Z0-9][a-zA-Z0-9._-]{2,31}" value="vubao07"></div>
-        <div class="field"><label for="register-password">Mật khẩu (ít nhất 16 ký tự)</label><input id="register-password" name="new-password" type="password" autocomplete="new-password" required minlength="16" maxlength="128"></div>
-        <div class="field"><label for="setup-token">Mã thiết lập một lần</label><input id="setup-token" name="setup-token" type="password" autocomplete="off" required maxlength="256"><span class="auth-note">Mã này được cấu hình trong Cloudflare Secrets với tên CMS_ADMIN_SETUP_TOKEN.</span></div>
-        <button class="btn" type="submit">Tạo tài khoản quản trị</button><p class="login-status" id="register-status" aria-live="polite"></p><button class="auth-toggle" id="show-login" type="button">Quay lại đăng nhập</button>
-      </form>
-    </section>
+    <section class="login-wrap hidden" id="login-view"><span class="eyebrow">Không gian riêng</span><h1>Đăng nhập<br>quản trị.</h1><p>Đăng nhập để cập nhật ảnh và câu chuyện của lớp.</p><form id="login-form"><div class="field"><label for="username">Tên đăng nhập</label><input id="username" name="username" type="text" autocomplete="username" required maxlength="128"></div><div class="field"><label for="password">Mật khẩu</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256"></div><button class="btn" type="submit">Vào trang quản trị</button><p class="login-status" id="login-status" aria-live="polite"></p></form></section>
     <section id="admin-view" class="workspace hidden">
       <div class="page-head"><div><span class="eyebrow">Lưu giữ những điều quý giá</span><h1>Biên tập kỷ yếu.</h1><p class="intro">Thay ảnh, chỉnh lời nhắn và sắp xếp câu chuyện. Mọi cập nhật sẽ xuất hiện trên trang kỷ yếu.</p></div><div class="head-side" id="admin-identity"></div></div>
       <div class="tabs" role="tablist" aria-label="Khu vực quản trị"><button class="active" id="tab-slots" data-tab="slots" role="tab" aria-controls="panel-slots" aria-selected="true" tabindex="0">Ảnh & vị trí</button><button id="tab-content" data-tab="content" role="tab" aria-controls="panel-content" aria-selected="false" tabindex="-1">Câu chuyện & thứ tự</button><button id="tab-settings" data-tab="settings" role="tab" aria-controls="panel-settings" aria-selected="false" tabindex="-1">Lời mở đầu & kết</button></div>

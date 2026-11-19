@@ -209,10 +209,7 @@ async function boot() {
   try {
     const session = await api("/api/admin/session");
     if (session.authenticated) showAdmin(session.username || session.email);
-    else {
-      $("#login-view").classList.remove("hidden");
-      $("#show-register").classList.toggle("hidden", !session.registration_available);
-    }
+    else $("#login-view").classList.remove("hidden");
   } catch (error) {
     $("#login-view").classList.remove("hidden"); $("#login-status").textContent = error.message;
   }
@@ -226,25 +223,6 @@ $("#login-form").addEventListener("submit", async (event) => {
     $("#password").value = ""; showAdmin(result.username); status.textContent = "";
   } catch (error) { status.textContent = error.message; }
   finally { buttonEl.disabled = false; }
-});
-
-$("#show-register").addEventListener("click", () => {
-  $("#login-panel").classList.add("hidden"); $("#register-form").classList.remove("hidden"); $("#register-username").focus();
-});
-
-$("#show-login").addEventListener("click", () => {
-  $("#register-form").classList.add("hidden"); $("#login-panel").classList.remove("hidden"); $("#username").focus();
-});
-
-$("#register-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const form = event.currentTarget, submit = form.querySelector("button[type=submit]"), status = $("#register-status");
-  submit.disabled = true; status.textContent = "Đang tạo tài khoản…";
-  try {
-    const result = await api("/api/admin/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: $("#register-username").value, password: $("#register-password").value, setup_token: $("#setup-token").value }) });
-    $("#register-password").value = ""; $("#setup-token").value = ""; showAdmin(result.username); status.textContent = "";
-  } catch (error) { status.textContent = error.message; }
-  finally { submit.disabled = false; }
 });
 
 $("#logout").addEventListener("click", async () => {

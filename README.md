@@ -40,19 +40,20 @@ Trang kỷ yếu một trang, giao diện tiếng Việt, cùng CMS riêng tại
    npx wrangler r2 bucket cors set our-memories-images --file r2-cors.json
    ```
 
-5. Áp dụng schema, đặt secrets quản trị, rồi deploy:
+5. Áp dụng schema, đặt thông tin đăng nhập admin, rồi deploy:
 
    ```sh
    npx wrangler d1 migrations apply our-memories --remote
-   npx wrangler pages secret put CMS_ADMIN_SETUP_TOKEN --project-name <ten-pages-project>
+   npx wrangler pages secret put CMS_ADMIN_USERNAME --project-name <ten-pages-project>
+   npx wrangler pages secret put CMS_ADMIN_PASSWORD --project-name <ten-pages-project>
    npx wrangler pages deploy ./public --project-name <ten-pages-project>
    ```
 
-   Wrangler sẽ hỏi giá trị setup token trong terminal. Token cần ít nhất 32 ký tự; không ghi token hoặc mật khẩu vào mã nguồn hay commit `.dev.vars`. Nếu chuyển từ cấu hình quản trị cũ, `CMS_ADMIN_EMAIL` và `CMS_ADMIN_PASSWORD` vẫn được hỗ trợ để đăng nhập lần đầu.
+   Wrangler sẽ hỏi giá trị từng secret trong terminal. Dùng username `vubao07` và mật khẩu của bạn; mật khẩu cần ít nhất 16 ký tự. Không ghi mật khẩu vào mã nguồn hay commit `.dev.vars`.
 
 ## CMS
 
-- Tạo tài khoản quản trị đầu tiên tại `/admin/` sau khi áp dụng migration. Đăng ký cần `CMS_ADMIN_SETUP_TOKEN` dạng secret dài ít nhất 32 ký tự; sau khi tài khoản đầu tiên được tạo, đăng ký tự khóa. Mật khẩu dài ít nhất 16 ký tự, được băm PBKDF2 và lưu trong D1. Đăng nhập bằng tên người dùng và mật khẩu.
+- Đăng nhập tại `/admin/` bằng `CMS_ADMIN_USERNAME` và `CMS_ADMIN_PASSWORD` đã đặt trong Cloudflare Secrets. Đăng nhập thành công sẽ tự cấp quyền `admin` cho tài khoản trên D1; không cần luồng đăng ký. Mật khẩu chỉ được giữ trong Cloudflare Secret, không lưu vào mã nguồn.
 - Chọn, thay hoặc xóa ảnh JPEG, PNG, WebP tối đa 12 MB. Worker cấp URL PUT có chữ ký hết hạn sau 5 phút; trình duyệt tải thẳng lên R2. Worker xác thực phiên, hạn mức, MIME và chữ ký tệp trước khi sao chép sang khóa ảnh bất biến và cập nhật D1.
 - Chỉnh chú thích, ngày tháng và điểm lấy nét ảnh; vị trí ngang/dọc dùng phần trăm.
 - Thêm, sửa, xóa và sắp xếp khoảnh khắc, mốc hành trình, thành viên và lời nhắn.
