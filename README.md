@@ -65,7 +65,9 @@ Trang kỷ yếu một trang, giao diện tiếng Việt, cùng CMS riêng tại
 - API quản trị kiểm tra phiên ở máy chủ và từ chối yêu cầu ghi khác origin. Đăng nhập giới hạn số lần thử theo địa chỉ IP đã băm.
 - Bucket R2 giữ riêng tư. URL tải lên chỉ cho phép PUT vào một object tạm với hạn dùng ngắn; Worker kiểm tra object bằng binding R2 rồi mới gắn vào metadata D1. Worker chỉ phân phối object hoàn tất đang được một ô ảnh tham chiếu.
 - Các object tải chưa hoàn tất nằm dưới tiền tố `pending/`. Có thể đặt lifecycle rule xóa tiền tố này sau một ngày để thu dọn trường hợp người dùng đóng trang giữa lúc tải.
-- Khi triển khai bằng Git integration, đặt thư mục gốc Pages là `our-memories`; `wrangler.toml` trỏ nội dung công khai đến `public/`. Cấu hình D1/R2 bindings cùng hai secrets như trên.
+- Repo `CLC50G` có thư mục dự án ngay tại gốc repo. Khi kết nối Cloudflare Pages trực tiếp với repo này, để **Root directory** trống và đặt **Build output directory** là `public`. Đây là trang HTML/CSS/JS tĩnh, không có bước build. Nếu Cloudflare yêu cầu Build command để chạy Pages Functions, dùng `exit 0`; không dùng `wrangler pages deploy` làm Build command vì đó là lệnh deploy thủ công.
+- `wrangler.toml` khai báo D1 và R2 làm nguồn cấu hình cho Pages Functions. Trước khi deploy production, tạo database/bucket thật, thay `database_id` mẫu bằng D1 ID thật và giữ bucket name khớp với R2 bucket đã tạo. Thiếu binding thật sẽ làm Functions không hoạt động hoặc khiến cấu hình deploy bị từ chối.
+- Lệnh `npx wrangler pages deploy ./public --project-name <ten-pages-project>` ở trên chỉ dùng khi tự deploy thủ công bằng Wrangler CLI. Nếu dùng Git integration, push commit lên `main` để Cloudflare tự deploy theo build settings.
 
 Khi chưa có bindings hoặc migration, trang công khai vẫn hiện nội dung mẫu và placeholder; CMS sẽ báo chưa cấu hình thay vì giả vờ lưu dữ liệu.
 
