@@ -49,11 +49,13 @@ Trang kỷ yếu một trang, giao diện tiếng Việt, cùng CMS riêng tại
    npx wrangler pages deploy ./public --project-name <ten-pages-project>
    ```
 
-   Wrangler sẽ hỏi giá trị từng secret trong terminal. Dùng username `vubao07` và mật khẩu của bạn; mật khẩu cần ít nhất 16 ký tự. Không ghi mật khẩu vào mã nguồn hay commit `.dev.vars`.
+   Wrangler sẽ hỏi giá trị từng secret trong terminal. Dùng username `vubao07` và mật khẩu admin riêng dài ít nhất 16 ký tự. Không ghi mật khẩu vào mã nguồn hay commit `.dev.vars`.
 
 ## CMS
 
-- Đăng nhập tại `/admin/` bằng `CMS_ADMIN_USERNAME` và `CMS_ADMIN_PASSWORD` đã đặt trong Cloudflare Secrets. Đăng nhập thành công sẽ tự cấp quyền `admin` cho tài khoản trên D1; không cần luồng đăng ký. Mật khẩu chỉ được giữ trong Cloudflare Secret, không lưu vào mã nguồn.
+- Thành viên đăng ký và đăng nhập tại `/account/`. Username `vubao07` được dành riêng: chỉ người biết đúng mật khẩu admin đã cấu hình trong Cloudflare Secrets mới đăng ký hoặc đăng nhập được tài khoản này với quyền `admin`. Các username khác chỉ nhận quyền `member` và không thể gọi API CMS. Sau khi đăng nhập, admin có thể mở trang quản trị tại `/admin/`.
+- Nếu trang đang online lần đầu: áp dụng migration remote mới nhất, đặt `CMS_ADMIN_USERNAME=vubao07` cùng `CMS_ADMIN_PASSWORD` (tối thiểu 16 ký tự) trong Cloudflare Pages → Settings → Variables and Secrets → Secrets, deploy lại, rồi vào `/account/` đăng ký `vubao07` bằng mật khẩu admin. Thành viên có thể tự đăng ký bằng username khác và mật khẩu từ 12 ký tự.
+- Mật khẩu thành viên được băm bằng PBKDF2 và salt ngẫu nhiên trước khi lưu vào D1. Cookie phiên là `HttpOnly`, `Secure`, `SameSite=Strict`; đăng ký/đăng nhập có giới hạn số lần thử.
 - Chọn, thay hoặc xóa ảnh JPEG, PNG, WebP tối đa 12 MB. Worker cấp URL PUT có chữ ký hết hạn sau 5 phút; trình duyệt tải thẳng lên R2. Worker xác thực phiên, hạn mức, MIME và chữ ký tệp trước khi sao chép sang khóa ảnh bất biến và cập nhật D1.
 - Chỉnh chú thích, ngày tháng và điểm lấy nét ảnh; vị trí ngang/dọc dùng phần trăm.
 - Thêm, sửa, xóa và sắp xếp khoảnh khắc, mốc hành trình, thành viên và lời nhắn.

@@ -1,4 +1,5 @@
 const SESSION_COOKIE = "__Host-memories_session";
+const USER_SESSION_COOKIE = "__Host-yearbook_user";
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
 
 export function json(data, status = 200, extraHeaders = {}) {
@@ -47,6 +48,43 @@ export async function sha256(value) {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+export function constantTimeEqual(left, right) {
+  if (typeof left !== "string" || typeof right !== "string" || left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index++) difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  return difference === 0;
+}
+
+function toHex(bytes) {
+  return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function toBase64(bytes) {
+  return btoa(String.fromCharCode(...new Uint8Array(bytes)));
+}
+
+export async function hashPassword(password, salt = crypto.getRandomValues(new Uint8Array(16))) {
+  const iterations = 210_000;
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, key, 256);
+  return `pbkdf2$${iterations}$${toBase64(salt)}$${toHex(bits)}`;
+}
+
+export async function verifyPassword(password, storedHash) {
+  const [scheme, iterationsText, saltText, expected] = (storedHash || "").split("$");
+  const iterations = Number(iterationsText);
+  if (scheme !== "pbkdf2" || !Number.isInteger(iterations) || iterations < 100_000 || iterations > 1_000_000 || !saltText || !/^[a-f0-9]{64}$/.test(expected || "")) return false;
+  let salt;
+  try { salt = Uint8Array.from(atob(saltText), (character) => character.charCodeAt(0)); } catch { return false; }
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, key, 256);
+  const actual = toHex(bits);
+  if (actual.length !== expected.length) return false;
+  let difference = 0;
+  for (let index = 0; index < actual.length; index++) difference |= actual.charCodeAt(index) ^ expected.charCodeAt(index);
+  return difference === 0;
+}
+
 export async function rateLimited(db, request, maxAttempts = 5) {
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   const key = await sha256(ip);
@@ -59,7 +97,7 @@ export async function rateLimited(db, request, maxAttempts = 5) {
   return row.attempt_count > maxAttempts;
 }
 
-function cookieValue(request, name) {
+export function cookieValue(request, name) {
   const cookie = request.headers.get("Cookie") || "";
   for (const part of cookie.split(";")) {
     const split = part.trim().indexOf("=");
@@ -77,6 +115,14 @@ export function clearSessionCookie() {
   return sessionCookie("", 0);
 }
 
+export function userSessionCookie(token, maxAge = SESSION_TTL_SECONDS) {
+  return `${USER_SESSION_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`;
+}
+
+export function clearUserSessionCookie() {
+  return userSessionCookie("", 0);
+}
+
 export async function createSession(db, adminId) {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   const token = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -84,6 +130,26 @@ export async function createSession(db, adminId) {
   await db.prepare(`INSERT INTO admin_sessions (token_hash, admin_id, expires_at)
     VALUES (?1, ?2, datetime('now', '+8 hours'))`).bind(tokenHash, adminId).run();
   return token;
+}
+
+export async function createUserSession(db, userId) {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const token = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  const tokenHash = await sha256(token);
+  await db.prepare(`INSERT INTO user_sessions (token_hash, user_id, expires_at)
+    VALUES (?1, ?2, datetime('now', '+8 hours'))`).bind(tokenHash, userId).run();
+  return token;
+}
+
+export async function requireUser(request, env) {
+  if (!env.DB) return null;
+  const token = cookieValue(request, USER_SESSION_COOKIE);
+  if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
+  const tokenHash = await sha256(token);
+  return env.DB.prepare(`SELECT u.user_id, u.username, u.role
+    FROM user_sessions s JOIN users u ON u.user_id = s.user_id
+    WHERE s.token_hash = ?1 AND s.expires_at > CURRENT_TIMESTAMP AND u.is_active = 1`)
+    .bind(tokenHash).first();
 }
 
 export async function requireAdmin(request, env) {
